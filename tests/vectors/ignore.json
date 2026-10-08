@@ -1,0 +1,215 @@
+{
+ "home": "/home/tom",
+ "cases": [
+  {
+   "base": "/",
+   "pattern": "~/.ssh",
+   "path": "/home/tom/.ssh",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~/.ssh",
+   "path": "/home/tom/.ssh/keys",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~/.ssh",
+   "path": "/home/tom/.sshx",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "/tmp/**",
+   "path": "/tmp",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "/tmp/**",
+   "path": "/tmp/a/b",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "/tmp/**",
+   "path": "/tmpx",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "secrets",
+   "path": "/a/b/secrets",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "secrets",
+   "path": "/a/b/secrets/c",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "secrets",
+   "path": "/a/b/mysecrets",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "**/secrets/**",
+   "path": "/x/secrets/y",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "**/secrets/**",
+   "path": "/x/secretsy",
+   "match": false
+  },
+  {
+   "base": "/home/tom/work/acme",
+   "pattern": "vendor/**",
+   "path": "/home/tom/work/acme/vendor/lib",
+   "match": true
+  },
+  {
+   "base": "/home/tom/work/acme",
+   "pattern": "vendor",
+   "path": "/home/tom/work/acme/x/vendor",
+   "match": true
+  },
+  {
+   "base": "/home/tom/work/acme",
+   "pattern": "/vendor",
+   "path": "/home/tom/work/acme/x/vendor",
+   "match": false
+  },
+  {
+   "base": "/home/tom/work/acme",
+   "pattern": "/vendor",
+   "path": "/home/tom/work/acme/vendor",
+   "match": true
+  },
+  {
+   "base": "/home/tom/work/acme",
+   "pattern": "**",
+   "path": "/home/tom/work/acme",
+   "match": true
+  },
+  {
+   "base": "/home/tom/work/acme",
+   "pattern": "**",
+   "path": "/home/tom/work/other",
+   "match": false
+  },
+  {
+   "base": "/home/tom/work/acme",
+   "pattern": "oss/**",
+   "path": "/home/tom/work/acme/oss",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~/src/proj-*",
+   "path": "/home/tom/src/proj-a/x",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~/src/proj-*",
+   "path": "/home/tom/src/proj/x",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "~/src/proj-?",
+   "path": "/home/tom/src/proj-ab",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "~/src/proj-?",
+   "path": "/home/tom/src/proj-a",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~/src/[ab]x",
+   "path": "/home/tom/src/bx",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~/src/[!ab]x",
+   "path": "/home/tom/src/bx",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "~/src/[!ab]x",
+   "path": "/home/tom/src/cx",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "/a/**/z",
+   "path": "/a/z",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "/a/**/z",
+   "path": "/a/b/c/z",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "/a/**/z",
+   "path": "/a/b/zz",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "~/odd(dir)",
+   "path": "/home/tom/odd(dir)/x",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~/a+b",
+   "path": "/home/tom/a+b",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~/a.b",
+   "path": "/home/tom/axb",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "~/x*y",
+   "path": "/home/tom/x/y",
+   "match": false
+  },
+  {
+   "base": "/",
+   "pattern": "~",
+   "path": "/home/tom",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~",
+   "path": "/home/tom/anything",
+   "match": true
+  },
+  {
+   "base": "/",
+   "pattern": "~",
+   "path": "/etc",
+   "match": false
+  }
+ ]
+}

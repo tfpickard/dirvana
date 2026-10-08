@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dirvana"
+version = "0.1.0.dev0"
+description = "A per-directory context graph for the shell: hook, daemon, shadow filesystem."
+readme = "README.md"
+license = "MPL-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Tom Pickard", email = "tom@pickard.dev" }]
+classifiers = [
+  "Environment :: Console",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Shells",
+]
+dependencies = []
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=1.0"]
+openai = ["openai>=2.0"]
+copilot = ["github-copilot-sdk>=1.0.17,<1.1"]
+all = ["dirvana[anthropic,openai,copilot]"]
+
+[project.scripts]
+dirvana = "dirvana.cli.main:main"
+
+[dependency-groups]
+dev = [
+  "dirvana[all]",
+  "pytest>=8",
+  "pexpect>=4.9",
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "pyright>=1.1.380",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dirvana"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"dirvana.plugin.zsh" = "dirvana/shell/dirvana.plugin.zsh"
+"init.zsh" = "dirvana/shell/init.zsh"
+"shell/zsh" = "dirvana/shell/shell/zsh"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "C4", "PL", "TRY", "N"]
+ignore = [
+  "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004", "PLW2901",
+  "TRY003", "TRY300", "RUF001",
+  # Subcommands and SDKs are imported lazily on purpose: CLI startup time matters.
+  "PLC0415",
+  # Exception names describe the condition (NoDaemon, EgressDenied), not "Error".
+  "N818",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["PLC0415", "S101"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+mypy_path = "src"
+packages = ["dirvana"]
+
+[tool.pyright]
+include = ["src", "tests"]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The strace audit is Linux-only and runs via `make test-audit`.
+norecursedirs = ["audit"]
+addopts = "-ra --strict-markers"
