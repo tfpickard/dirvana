@@ -1,0 +1,147 @@
+[
+ {
+  "name": "auth header bearer",
+  "in": "curl -H 'Authorization: Bearer abc.def-123' https://x.io",
+  "out": "curl -H 'Authorization: Bearer <redacted>' https://x.io"
+ },
+ {
+  "name": "auth header token",
+  "in": "curl -H \"authorization: token ghp_0123456789abcdefghijABCDEFGHIJ\" x",
+  "out": "curl -H \"authorization: token <redacted>\" x"
+ },
+ {
+  "name": "auth header no scheme",
+  "in": "wget --header='Authorization: abc123' u",
+  "out": "wget --header='Authorization: <redacted>' u"
+ },
+ {
+  "name": "bearer standalone",
+  "in": "http :8080 'BEARER xyz.abc'",
+  "out": "http :8080 'BEARER <redacted>'"
+ },
+ {
+  "name": "export token",
+  "in": "export API_TOKEN=abc123",
+  "out": "export API_TOKEN=<redacted>"
+ },
+ {
+  "name": "double-quoted secret",
+  "in": "AWS_SECRET_ACCESS_KEY=\"x y\" aws s3 ls",
+  "out": "AWS_SECRET_ACCESS_KEY=<redacted> aws s3 ls"
+ },
+ {
+  "name": "single-quoted password",
+  "in": "DB_PASSWORD='p@ss w' ./run",
+  "out": "DB_PASSWORD=<redacted> ./run"
+ },
+ {
+  "name": "pgpassword",
+  "in": "PGPASSWORD=x psql -h db",
+  "out": "PGPASSWORD=<redacted> psql -h db"
+ },
+ {
+  "name": "flag equals",
+  "in": "mysql --password=hunter2 -u root",
+  "out": "mysql --password=<redacted> -u root"
+ },
+ {
+  "name": "flag space",
+  "in": "tool --api-key sk-abcdefghijklmnopqrstuvwxyz",
+  "out": "tool --api-key <redacted>"
+ },
+ {
+  "name": "url creds",
+  "in": "git clone https://tom:s3cret@github.com/x/y.git",
+  "out": "git clone https://<redacted>@github.com/x/y.git"
+ },
+ {
+  "name": "url creds in assignment",
+  "in": "url=postgres://user:pw@host/db",
+  "out": "url=postgres://<redacted>@host/db"
+ },
+ {
+  "name": "github classic",
+  "in": "echo ghp_0123456789abcdefghijABCDEFGHIJ",
+  "out": "echo <redacted>"
+ },
+ {
+  "name": "github fine-grained",
+  "in": "echo github_pat_11ABCDEFG0123456789_abcdefghijklmnop",
+  "out": "echo <redacted>"
+ },
+ {
+  "name": "anthropic key",
+  "in": "export ANTHROPIC=sk-ant-api03-abcdefghijklmnopqrstuvwxyz",
+  "out": "export ANTHROPIC=<redacted>"
+ },
+ {
+  "name": "openai key",
+  "in": "echo sk-proj-abcdefghijklmnopqrstuvwx",
+  "out": "echo <redacted>"
+ },
+ {
+  "name": "slack",
+  "in": "slack xoxb-1234567890-abcdefghij",
+  "out": "slack <redacted>"
+ },
+ {
+  "name": "aws access key id",
+  "in": "id AKIAIOSFODNN7EXAMPLE end",
+  "out": "id <redacted> end"
+ },
+ {
+  "name": "google api key",
+  "in": "k AIzaSyA-abcdefghijklmnopqrstuvwxyz01234 z",
+  "out": "k <redacted> z"
+ },
+ {
+  "name": "gitlab",
+  "in": "glpat-abcdefghijklmnopqrst",
+  "out": "<redacted>"
+ },
+ {
+  "name": "jwt",
+  "in": "tok eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghijklmnop",
+  "out": "tok <redacted>"
+ },
+ {
+  "name": "pem",
+  "in": "-----BEGIN OPENSSH PRIVATE KEY-----\nabc\n-----END OPENSSH PRIVATE KEY-----\nafter",
+  "out": "<redacted:private-key>\nafter"
+ },
+ {
+  "name": "pem unterminated",
+  "in": "x -----BEGIN RSA PRIVATE KEY-----\nabc",
+  "out": "x <redacted:private-key>"
+ },
+ {
+  "name": "benign",
+  "in": "ls -la ../B",
+  "out": "ls -la ../B"
+ },
+ {
+  "name": "benign trigger word",
+  "in": "make keyboard",
+  "out": "make keyboard"
+ },
+ {
+  "name": "benign flag",
+  "in": "git log --author=tom",
+  "out": "git log --author=tom"
+ },
+ {
+  "name": "benign variable reference",
+  "in": "echo $GITHUB_TOKEN",
+  "out": "echo $GITHUB_TOKEN"
+ },
+ {
+  "name": "over-redaction is accepted",
+  "in": "monkey=1",
+  "out": "monkey=<redacted>"
+ },
+ {
+  "name": "unicode passes through",
+  "in": "echo héllo wörld",
+  "out": "echo héllo wörld"
+ }
+]

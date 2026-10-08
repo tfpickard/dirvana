@@ -1,0 +1,3 @@
+# Baseline interactive config for startup comparisons: a prompt and nothing else.
+PS1='%~ %# '
+HISTFILE=/dev/null

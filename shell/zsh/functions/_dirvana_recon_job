@@ -1,0 +1,108 @@
+# _dirvana_recon_job PHYS SHADOW
+#
+# Gather recon facts for directory PHYS and write them atomically to SHADOW/%recon.json.
+# Runs disowned in the background (or in the foreground with DIRVANA_RECON_SYNC=1), so it may
+# fork. It never writes inside PHYS: git is invoked read-only with optional locks disabled.
+
+emulate -L zsh
+setopt extended_glob
+
+local phys=$1 shadow=$2 out top= gitdir= branch= err= line url name f buf j sep
+local -a lines g roots files
+local -A st
+
+export GIT_OPTIONAL_LOCKS=0 GIT_TERMINAL_PROMPT=0
+g=(command git -C $phys -c core.fsmonitor=false)
+
+local git_json=null
+if (( $+commands[git] )); then
+  out=$(LC_ALL=C $g rev-parse --show-toplevel --absolute-git-dir 2>&1)
+  if (( $? == 0 )); then
+    lines=("${(@f)out}")
+    top=$lines[1]
+    gitdir=$lines[2]
+  elif [[ $out == *(dubious ownership|safe.directory)* ]]; then
+    err=dubious-ownership
+  elif [[ $out != *(not a git repository)* ]]; then
+    err=error
+  fi
+fi
+
+if [[ -n $top ]]; then
+  branch=$($g symbolic-ref --short -q HEAD 2>/dev/null)
+  if [[ -z $branch ]]; then
+    branch=$($g rev-parse --short HEAD 2>/dev/null)
+    [[ -n $branch ]] && branch="detached:$branch"
+  fi
+  git_json="{"
+  _dirvana_jstr "$top"; git_json+="\"toplevel\":$REPLY"
+  _dirvana_jstr "$gitdir"; git_json+=",\"dir\":$REPLY"
+  _dirvana_jstr "$branch"; git_json+=",\"branch\":$REPLY"
+  git_json+=",\"remotes\":{"
+  sep=
+  for line in "${(@f)$($g config --get-regexp '^remote\..*\.url$' 2>/dev/null)}"; do
+    [[ -n $line ]] || continue
+    name=${${line%% *}#remote.}
+    name=${name%.url}
+    url=${line#* }
+    # Never store credentials embedded in remote URLs.
+    url=${url/(#b)([A-Za-z][A-Za-z0-9+.-]#:\/\/)[^\/@]##@/$match[1]}
+    _dirvana_jstr "$name"; j=$REPLY
+    _dirvana_jstr "$url"
+    git_json+="$sep$j:$REPLY"
+    sep=,
+  done
+  git_json+="}"
+  if [[ $top == $phys ]]; then
+    roots=(${(o)${(f)"$($g rev-list --max-parents=0 HEAD 2>/dev/null)"}})
+    git_json+=",\"root\":["
+    sep=
+    for line in $roots; do
+      git_json+="$sep\"$line\""
+      sep=,
+    done
+    git_json+="]"
+  else
+    # Repo-level facts live on the toplevel's node; make sure they exist.
+    _dirvana_shadow $top
+    [[ -e $REPLY/%recon.json ]] || _dirvana_recon_job $top $REPLY
+  fi
+  git_json+=",\"error\":null}"
+elif [[ -n $err ]]; then
+  git_json="{\"error\":\"$err\"}"
+fi
+
+# Bounded, redacted excerpts of files that say what this directory is.
+files=($phys/README*(N.[1,3]) $phys/(AGENTS.md|CLAUDE.md|Makefile|GNUmakefile|CMakeLists.txt|meson.build|pyproject.toml|setup.py|setup.cfg|package.json|Cargo.toml|go.mod|flake.nix|Dockerfile|Containerfile|compose.yaml|docker-compose.yml|justfile|Justfile|configure.ac|build.gradle|pom.xml|Gemfile)(N.))
+local files_json="{" fsep=
+for f in $files; do
+  st=()
+  zstat -H st -- $f 2>/dev/null || continue
+  buf=
+  { sysread -s 2048 buf } < $f 2>/dev/null
+  if [[ $buf == *$'\0'* ]]; then
+    buf=
+  else
+    lines=("${(@f)buf}")
+    buf=${(F)lines[1,40]}
+    _dirvana_redact "$buf"
+    buf=$REPLY
+  fi
+  _dirvana_jstr "${f:t}"; j=$REPLY
+  _dirvana_jstr "$buf"
+  files_json+="$fsep$j:{\"size\":${st[size]:-0},\"mtime\":${st[mtime]:-0},\"excerpt\":$REPLY}"
+  fsep=,
+done
+files_json+="}"
+
+local -a dm
+local -i dmt=0
+zstat -A dm +mtime -- $phys 2>/dev/null && dmt=$dm[1]
+_dirvana_jstr "$phys"
+local json="{\"v\":1,\"at\":$EPOCHSECONDS,\"path\":$REPLY,\"dir_mtime\":$dmt,\"git\":$git_json,\"files\":$files_json}"
+
+_dirvana_mkdirs $shadow
+local tmp=$shadow/%recon.json.tmp.$$
+print -r -- $json > $tmp 2>/dev/null && zf_mv -f -- $tmp $shadow/%recon.json 2>/dev/null
+[[ -e $tmp ]] && zf_rm -f -- $tmp 2>/dev/null
+return 0

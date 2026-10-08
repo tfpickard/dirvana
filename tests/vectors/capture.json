@@ -1,0 +1,426 @@
+{
+ "tree": {
+  "dirs": [
+   "A/sub",
+   "B/config",
+   "C",
+   "home/.ssh",
+   "A sp",
+   "A/.ssh"
+  ],
+  "files": [
+   "A/f",
+   "B/f",
+   "B/Makefile",
+   "B/config/flags.mk",
+   "B/build.sh",
+   "home/.ssh/id.pub",
+   "A/.ssh/key"
+  ],
+  "symlinks": [
+   [
+    "link",
+    "B"
+   ]
+  ]
+ },
+ "cwd": "A",
+ "home": "home",
+ "cases": [
+  {
+   "cmd": "ls ../B",
+   "edges": [
+    [
+     "list",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cp ../B/f .",
+   "edges": [
+    [
+     "copy-from",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cp f ../C/",
+   "edges": [
+    [
+     "copy-to",
+     "C"
+    ]
+   ]
+  },
+  {
+   "cmd": "cp f ../C/newname",
+   "edges": [
+    [
+     "copy-to",
+     "C"
+    ]
+   ]
+  },
+  {
+   "cmd": "diff ../B/f f",
+   "edges": [
+    [
+     "diff",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "nvim ../B/Makefile",
+   "edges": [
+    [
+     "edit",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "nvim -d ../B/f f",
+   "edges": [
+    [
+     "diff",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "vim -R ../B/f",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "make -C ../B",
+   "edges": [
+    [
+     "run",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "git -C ../B status",
+   "edges": [
+    [
+     "run",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "grep -r foo ../B",
+   "edges": [
+    [
+     "search",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "grep ../B/f ../C",
+   "edges": [
+    [
+     "search",
+     "C"
+    ]
+   ]
+  },
+  {
+   "cmd": "grep -e x ../B/f",
+   "edges": [
+    [
+     "search",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "find ../B -name '*.c'",
+   "edges": [
+    [
+     "search",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cat ../B/config/flags.mk | grep x",
+   "edges": [
+    [
+     "read",
+     "B/config"
+    ]
+   ]
+  },
+  {
+   "cmd": "less ../B/*.mk",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cd ../B && cat f",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "(cd ../B; make)",
+   "edges": [
+    [
+     "cd",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cat $HOME/x",
+   "edges": []
+  },
+  {
+   "cmd": "echo ../B",
+   "edges": [
+    [
+     "ref",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "ls sub",
+   "edges": []
+  },
+  {
+   "cmd": "ls ../A/sub",
+   "edges": []
+  },
+  {
+   "cmd": "rsync -av ../B/ ../C/",
+   "edges": [
+    [
+     "copy-from",
+     "B"
+    ],
+    [
+     "copy-to",
+     "C"
+    ]
+   ]
+  },
+  {
+   "cmd": "mv ../B/f ../C/",
+   "edges": [
+    [
+     "move-from",
+     "B"
+    ],
+    [
+     "move-to",
+     "C"
+    ]
+   ]
+  },
+  {
+   "cmd": "cp -t ../C ../B/f",
+   "edges": [
+    [
+     "copy-to",
+     "C"
+    ],
+    [
+     "copy-from",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "ls ~/.ssh",
+   "edges": [],
+   "ignored_words": [
+    "~/.ssh"
+   ]
+  },
+  {
+   "cmd": "sudo -u root cat ../B/f",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "FOO=1 env BAR=2 cat ../B/f",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cat ../nonexistent/x",
+   "edges": []
+  },
+  {
+   "cmd": "../B/build.sh --fast",
+   "edges": [
+    [
+     "run",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cat < ../B/f > out.txt",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "echo hi > ../C/out",
+   "edges": [
+    [
+     "copy-to",
+     "C"
+    ]
+   ]
+  },
+  {
+   "cmd": "if [ -d ../B ]; then ls ../C; fi",
+   "edges": [
+    [
+     "list",
+     "C"
+    ]
+   ]
+  },
+  {
+   "cmd": "ls ..",
+   "edges": [
+    [
+     "list",
+     ""
+    ]
+   ]
+  },
+  {
+   "cmd": "ls ../B ../B/config",
+   "edges": [
+    [
+     "list",
+     "B"
+    ],
+    [
+     "list",
+     "B/config"
+    ]
+   ]
+  },
+  {
+   "cmd": "diff -ru ../B .",
+   "edges": [
+    [
+     "diff",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cat \"../B/f\"",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "ls ../link",
+   "edges": [
+    [
+     "list",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "git diff --no-index ../B/f f",
+   "edges": [
+    [
+     "diff",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cat ../B/f ../B/f",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "ls '../A sp'",
+   "edges": [
+    [
+     "list",
+     "A sp"
+    ]
+   ]
+  },
+  {
+   "cmd": "make --directory=../B test",
+   "edges": [
+    [
+     "run",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cat ../B/f # trailing comment ../C",
+   "edges": [
+    [
+     "read",
+     "B"
+    ]
+   ]
+  },
+  {
+   "cmd": "cd ~/.ssh && ls",
+   "edges": [],
+   "ignored_words": [
+    "~/.ssh"
+   ]
+  },
+  {
+   "cmd": "cat ~/.ssh/id.pub .ssh/key",
+   "edges": [],
+   "ignored_words": [
+    "~/.ssh/id.pub"
+   ]
+  }
+ ]
+}

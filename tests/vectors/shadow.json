@@ -1,0 +1,26 @@
+[
+ {
+  "path": "/",
+  "shadow": ""
+ },
+ {
+  "path": "/etc",
+  "shadow": "etc"
+ },
+ {
+  "path": "/home/tom/%weird",
+  "shadow": "home/tom/%%weird"
+ },
+ {
+  "path": "/a/%%b/c%",
+  "shadow": "a/%%%b/c%"
+ },
+ {
+  "path": "/home/tom/src/a b",
+  "shadow": "home/tom/src/a b"
+ },
+ {
+  "path": "/x/%",
+  "shadow": "x/%%"
+ }
+]
