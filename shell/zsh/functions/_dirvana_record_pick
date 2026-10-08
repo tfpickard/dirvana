@@ -1,0 +1,11 @@
+# _dirvana_record_pick CMD SOURCE RANK: note which suggestion was taken (feedback signal for
+# ranking). Recorded in the cwd's node like any observation, under the same privacy rules.
+
+(( _dirvana_paused || _dirvana_pwd_ignored )) && return 0
+[[ -e $_dirvana_root/var/paused ]] && return 0
+local cmd=$1 src=$2 rank=$3 jc jw
+_dirvana_redact "$cmd"; _dirvana_jstr "$REPLY"; jc=$REPLY
+_dirvana_jstr "$_dirvana_pwd_phys"; jw=$REPLY
+typeset -F 3 t=$EPOCHREALTIME
+(( _dirvana_seq++ ))
+_dirvana_append $_dirvana_pwd_shadow "{\"v\":1,\"id\":\"$_dirvana_sid:$_dirvana_seq\",\"k\":\"pick\",\"t\":$t,\"mid\":\"$_dirvana_mid\",\"host\":$_dirvana_host_json,\"sid\":\"$_dirvana_sid\",\"cwd\":$jw,\"cmd\":$jc,\"source\":\"${src//[^a-z]/}\",\"rank\":${rank:-0}}"

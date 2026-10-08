@@ -1,0 +1,59 @@
+# dirvana-suggest widget (default ^Xj): pick a suggested command for this directory and put
+# it on the command line. It is never executed; you review and press Enter yourself.
+
+emulate -L zsh
+setopt extended_glob pipefail no_aliases
+
+if (( ! $+commands[dirvana] )); then
+  zle -M "dirvana: CLI not on PATH (uv tool install dirvana)"
+  return 1
+fi
+
+local out pick picker cmd rest src
+local -a cands
+local -i rank
+_dirvana_widget_request
+zle -M "dirvana: thinking…"
+zle -R
+out=$(print -r -- $REPLY | command dirvana suggest --format=zsh 2>/dev/null)
+cands=("${(@f)out}")
+cands=(${cands:#[[:space:]]#})
+cands=(${cands:#$'\t'*})
+if (( ! $#cands )); then
+  zle -M "dirvana: nothing to suggest here yet"
+  return 0
+fi
+
+zstyle -s ':dirvana:widget' picker picker || picker=auto
+if [[ $picker == fzf || ( $picker == auto && -n $commands[fzf] ) ]]; then
+  zle -M ""
+  local height
+  local -a opts
+  zstyle -s ':dirvana:widget' fzf-height height || height=40%
+  [[ $height == full ]] || opts=(--height=$height)
+  # Candidates arrive on stdin; fzf opens /dev/tty itself for keys. (Redirecting stdin from
+  # /dev/tty here would, under MULTIOS, feed fzf both and it would never see EOF.)
+  pick=$(print -rl -- $cands | fzf $opts --layout=reverse --delimiter=$'\t' \
+    --with-nth=1,3 --nth=1 --prompt='dirvana> ' --no-multi \
+    --preview='printf "%s\n" {2}' --preview-window=down,2,wrap)
+  if [[ -z $pick ]]; then
+    zle reset-prompt
+    return 0
+  fi
+  rank=${cands[(ie)$pick]}
+else
+  if ! _dirvana_pick_builtin $cands; then
+    zle reset-prompt
+    return 0
+  fi
+  pick=$cands[REPLY]
+  rank=$REPLY
+fi
+
+cmd=${pick%%$'\t'*}
+rest=${pick#*$'\t'}
+src=${rest##*$'\t'}
+BUFFER=$cmd
+CURSOR=$#BUFFER
+_dirvana_record_pick "$cmd" "$src" $rank
+zle reset-prompt

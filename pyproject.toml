@@ -20,11 +20,18 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+anthropic = ["anthropic>=1.0"]
+openai = ["openai>=2.0"]
+copilot = ["github-copilot-sdk>=1.0.17,<1.1"]
+all = ["dirvana[anthropic,openai,copilot]"]
+
 [project.scripts]
 dirvana = "dirvana.cli.main:main"
 
 [dependency-groups]
 dev = [
+  "dirvana[all]",
   "pytest>=8",
   "pexpect>=4.9",
   "ruff>=0.6",
@@ -52,6 +59,8 @@ ignore = [
   "TRY003", "TRY300", "RUF001",
   # Subcommands and SDKs are imported lazily on purpose: CLI startup time matters.
   "PLC0415",
+  # Exception names describe the condition (NoDaemon, EgressDenied), not "Error".
+  "N818",
 ]
 
 [tool.ruff.lint.per-file-ignores]

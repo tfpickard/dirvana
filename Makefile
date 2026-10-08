@@ -5,7 +5,7 @@ RUN     := $(UV) run --frozen
 ZSH     ?= zsh
 ZSH_SRC := dirvana.plugin.zsh init.zsh shell/zsh/dirvana.zsh $(wildcard shell/zsh/functions/*)
 
-.PHONY: all test lint format typecheck zsh-check pytest bench test-audit install zcompile clean
+.PHONY: all test lint format typecheck zsh-check pytest bench smoke test-audit install zcompile clean
 
 all: test
 
@@ -34,6 +34,11 @@ pytest:
 ## bench: hook latency (in-process p50/p95/p99) and interactive startup cost
 bench:
 	./bench/run.sh
+
+## smoke: one tiny REAL call per configured provider (needs keys/auth; costs a few tokens)
+smoke:
+	$(RUN) dirvana doctor --providers
+	$(RUN) dirvana smoke
 
 ## test-audit: Linux only; strace the hook and assert every write lands in dirvana's dirs
 test-audit:

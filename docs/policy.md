@@ -32,7 +32,7 @@ needed) the per-subtree file rooted at DIR. `dirvana policy check` validates eve
 | `retention` | `eternal` (default), `ephemeral` | Ephemeral nodes are deleted `ttl` after their last activity. |
 | `ttl` | duration: `90s 15m 6h 7d 2w 1d12h` | Used with `retention=ephemeral`. |
 | `enrich` | `async` (default), `sync`, `off` | When derived (LLM) context is built. |
-| `llm` | `none` or `name[,name...]` | Which provider instances may receive this subtree's data. |
+| `llm` | `none` or `name[,name...]` | Which provider *instances* (the `[providers.NAME]` tables in config.toml) may receive this subtree's data. Unset: every configured instance. |
 
 ## Matching
 

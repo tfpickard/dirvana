@@ -88,6 +88,27 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("ingest", help="fold new observations into edges and identities now")
     p.add_argument("--full", action="store_true", help="recompute every node")
 
+    p = sub.add_parser("enrich", help="build derived (LLM) context for directories now")
+    p.add_argument("dirs", nargs="*", metavar="DIR", help="directories (default: every dirty node)")
+    p.add_argument("--force", action="store_true", help="regenerate even if nothing changed")
+    p.add_argument(
+        "--dry-run", action="store_true", help="list what would be enriched; call nothing"
+    )
+
+    p = sub.add_parser("daemon", help="run the background daemon (ingest, enrich, serve hotkeys)")
+    p.add_argument("--oneshot", action="store_true", help="run one tick and exit (for timers)")
+
+    p = sub.add_parser("suggest", help="hotkey client: candidate commands for a directory")
+    p.add_argument("--format", choices=["zsh", "tsv"], default="tsv", help="output format")
+    p.add_argument("-n", type=int, help="number of candidates")
+    p = sub.add_parser("brief", help="hotkey client: a briefing for a directory")
+
+    p = sub.add_parser("doctor", help="check the installation, daemon and providers")
+    p.add_argument("--providers", action="store_true", help="also contact each provider")
+
+    p = sub.add_parser("smoke", help="make one tiny real call per configured provider")
+    p.add_argument("--provider", help="only this provider instance")
+
     p = sub.add_parser("init", help="print the line that loads the shell plugin")
     p.add_argument("shell", choices=["zsh"], help="shell to integrate with")
 

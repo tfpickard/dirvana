@@ -1,0 +1,21 @@
+# dirvana-brief widget (default ^Xb): what this directory is, what changed since you were
+# last here, and what you are likely about to do. Printed above the prompt; the command line
+# is left untouched.
+
+emulate -L zsh
+setopt extended_glob pipefail no_aliases
+
+if (( ! $+commands[dirvana] )); then
+  zle -M "dirvana: CLI not on PATH (uv tool install dirvana)"
+  return 1
+fi
+
+local out
+_dirvana_widget_request
+zle -M "dirvana: thinking…"
+zle -R
+out=$(print -r -- $REPLY | command dirvana brief 2>/dev/null)
+zle -M ""
+zle -I
+print -r -- ${out:-"dirvana: nothing known about this directory yet"}
+zle reset-prompt

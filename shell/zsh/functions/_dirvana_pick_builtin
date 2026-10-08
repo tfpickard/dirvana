@@ -1,0 +1,21 @@
+# _dirvana_pick_builtin CANDIDATE... -> REPLY (index). The picker used when fzf is absent:
+# a numbered list under the prompt; press 1-9 to choose, anything else cancels.
+
+local -a lines
+local -i i n
+local key
+n=$(( $# > 9 ? 9 : $# ))
+for (( i = 1; i <= n; i++ )); do
+  local item=${@[i]}
+  local cmd=${item%%$'\t'*} rest=${item#*$'\t'}
+  lines+=("$i  $cmd    # ${rest%$'\t'*}")
+done
+zle -M "${(F)lines}"$'\n'"dirvana: 1-$n to insert, any other key to cancel"
+zle -R
+read -k key
+zle -M ""
+if [[ $key == [1-9] ]] && (( key <= n )); then
+  REPLY=$key
+  return 0
+fi
+return 1

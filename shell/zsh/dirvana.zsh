@@ -842,6 +842,43 @@ dirvana_plugin_unload() {
   unset -m '_dirvana_*' 2>/dev/null
 }
 
+# --- widgets ------------------------------------------------------------------------------
+
+# Bind each widget to its key in emacs and viins, but only where the key is still unbound, so
+# other plugins' and your own bindings win. Override with
+#   zstyle ':dirvana:widget:dirvana-suggest' key '^Xs'    (or 'none' to leave it unbound)
+# bindkey prints the current binding; it goes through a scratch file in dirvana's own run
+# directory because capturing it with $(...) would fork at every shell start.
+_dirvana_bind_widgets() {
+  zle -N dirvana-suggest _dirvana_widget_suggest
+  zle -N dirvana-brief _dirvana_widget_brief
+  (( ${+ZSH_AUTOSUGGEST_CLEAR_WIDGETS} )) && ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(dirvana-suggest)
+  local widget default key km line scratch=$_dirvana_root/run/.bindkey.$$
+  local -a want
+  for widget default in dirvana-suggest '^Xj' dirvana-brief '^Xb'; do
+    # zstyle -s empties its target when the style is unset, so read into a separate name.
+    zstyle -s ":dirvana:widget:$widget" key key || key=$default
+    [[ $key == none ]] || want+=($widget $key)
+  done
+  (( $#want )) || return 0
+  [[ -d $_dirvana_root/run ]] || _dirvana_mkdirs $_dirvana_root/run
+  # One scratch write for every lookup: "KEY" WIDGET per line, emacs then viins per key.
+  {
+    for widget key in $want; do
+      bindkey -M emacs $key
+      bindkey -M viins $key
+    done
+  } >| $scratch 2>/dev/null
+  for widget key in $want; do
+    for km in emacs viins; do
+      line=
+      IFS= read -r line
+      [[ -z $line || $line == *' undefined-key' ]] && bindkey -M $km $key $widget
+    done
+  done < $scratch
+  zf_rm -f -- $scratch 2>/dev/null
+}
+
 # --- load ---------------------------------------------------------------------------------
 
 # Load runs under the user's options (this file is sourced), so do the work in a function.
@@ -849,7 +886,8 @@ _dirvana_load() {
   emulate -L zsh
   setopt extended_glob
   fpath=($_dirvana_zsh_dir/functions $fpath)
-  autoload -Uz _dirvana_recon_job
+  autoload -Uz _dirvana_recon_job _dirvana_widget_suggest _dirvana_widget_brief \
+    _dirvana_widget_request _dirvana_pick_builtin _dirvana_record_pick
   _dirvana_init_dirs
   _dirvana_machine_id
   _dirvana_sid=$_dirvana_mid:$$:$EPOCHSECONDS
@@ -864,6 +902,7 @@ _dirvana_load() {
   # add-zle-hook-widget silently does nothing unless zsh/zle is already loaded, and in
   # .zshrc it usually is not yet.
   zmodload zsh/zle 2>/dev/null && add-zle-hook-widget line-finish _dirvana_line_finish
+  _dirvana_bind_widgets
   # A deferred load (zsh-defer) misses the first chpwd; recon the starting directory now.
   (( _dirvana_pwd_ignored )) || _dirvana_recon_gate
 }

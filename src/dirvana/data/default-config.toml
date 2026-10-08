@@ -1,0 +1,61 @@
+# dirvana default configuration. Copy what you want to change into
+# ~/.config/dirvana/config.toml; tables are merged key by key over these defaults.
+#
+# Provider instances are tables under [providers]. Each has a `kind` (anthropic, openai,
+# copilot, mock) and is referenced by its *name* in policy `llm=` rules, so you can define
+# e.g. a local Ollama as [providers.ollama] kind = "openai" with a base_url and pin a subtree
+# to it without also allowing api.openai.com.
+
+[providers]
+# Preference order among the instances a directory's policy allows.
+order = ["anthropic", "openai", "copilot"]
+
+[providers.anthropic]
+kind = "anthropic"
+model = "claude-sonnet-5-5"
+api_key_env = "ANTHROPIC_API_KEY"
+# api_key_cmd = "pass show anthropic/api-key"
+max_tokens_per_run = 200000
+max_tokens_per_day = 1000000
+
+[providers.openai]
+kind = "openai"
+# No default model on purpose: set one to enable this provider, e.g. model = "gpt-5-mini".
+model = ""
+api_key_env = "OPENAI_API_KEY"
+# base_url = "http://127.0.0.1:11434/v1"   # Ollama, llama.cpp, LM Studio (uses Chat Completions)
+max_tokens_per_run = 200000
+max_tokens_per_day = 1000000
+
+[providers.copilot]
+kind = "copilot"
+# Preference list resolved against the models the Copilot runtime reports; empty = its first.
+models = []
+# env: COPILOT_GITHUB_TOKEN / GH_TOKEN (fine-grained PAT); gh: `gh auth token`; logged-in: `copilot login`.
+auth = "env"
+max_requests_per_run = 10
+max_requests_per_day = 50
+
+[hotkey]
+timeout = 2.5          # seconds, hard deadline for the picker
+candidates = 8
+picker = "auto"        # auto (fzf if installed), fzf, builtin
+
+[brief]
+timeout = 4.0
+max_output_tokens = 500
+
+[enrich]
+min_interval = "6h"            # re-enrich a changed node at most this often
+min_new_observations = 5       # ...and only once this many new commands arrived
+min_observations = 3           # nodes with fewer commands and no edges are not enriched
+max_nodes_per_run = 25
+max_output_tokens = 900
+
+[daemon]
+interval = 60                  # seconds between ticks in long-running mode
+
+[ranking]
+half_life_days = 30
+min_evidence = 2
+min_sessions = 2

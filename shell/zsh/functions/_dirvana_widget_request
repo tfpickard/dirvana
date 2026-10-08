@@ -1,0 +1,21 @@
+# _dirvana_widget_request -> REPLY: the JSON request the hotkey clients read on stdin.
+# Session history goes along unless the session is incognito; the client applies egress
+# policy to every entry before anything leaves the machine.
+
+local sep= r c w ring='[' jcwd jbuf
+_dirvana_jstr "${_dirvana_pwd_phys:-$PWD}"; jcwd=$REPLY
+_dirvana_jstr "$BUFFER"; jbuf=$REPLY
+if (( ! _dirvana_incognito )); then
+  for r in $_dirvana_ring; do
+    c=${r%%$'\x1f'*}
+    w=${r#*$'\x1f'}
+    _dirvana_jstr "$c"; c=$REPLY
+    _dirvana_jstr "$w"; w=$REPLY
+    ring+="$sep{\"cmd\":$c,\"cwd\":$w}"
+    sep=,
+  done
+fi
+ring+=']'
+local incog=false
+(( _dirvana_incognito )) && incog=true
+REPLY="{\"cwd\":$jcwd,\"buffer\":$jbuf,\"ring\":$ring,\"sid\":\"$_dirvana_sid\",\"incognito\":$incog}"

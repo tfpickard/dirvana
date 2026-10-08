@@ -398,3 +398,225 @@ def _plugin_path() -> Path:
 def cmd_init(args: argparse.Namespace) -> int:
     print(f"source {shlex.quote(str(_plugin_path()))}")
     return 0
+
+
+# -- M2: daemon, enrichment, hotkey clients, health ---------------------------------------------
+
+
+def cmd_daemon(args: argparse.Namespace) -> int:
+    import asyncio
+
+    from dirvana.daemon import AlreadyRunning, Daemon
+    from dirvana.runtime import Runtime
+
+    rt = Runtime.open()
+    rt.dirs.ensure_root()
+    d = Daemon(rt)
+    try:
+        if args.oneshot:
+            report = asyncio.run(d.run_once())
+            print(json.dumps(report, sort_keys=True))
+        else:
+            asyncio.run(d.run_forever())
+    except AlreadyRunning as e:
+        raise CliError(str(e), 1) from e
+    return 0
+
+
+def cmd_enrich(args: argparse.Namespace) -> int:
+    from dirvana import daemon
+    from dirvana.enrich import run_enrich
+    from dirvana.runtime import Runtime
+
+    rt = Runtime.open()
+    paths = [_real(p) for p in args.dirs] or None
+    resp = None
+    if not args.dry_run:
+        resp = daemon.request(
+            rt.socket_path,
+            {"v": 1, "op": "enrich", "paths": paths, "force": args.force},
+            timeout=600,
+        )
+    if resp is not None:
+        if not resp.get("ok"):
+            raise CliError(str(resp.get("error")))
+        enriched, skipped = resp.get("enriched", []), resp.get("skipped", {})
+        failures = resp.get("failures", [])
+    else:
+        if rt.dirs.system.is_dir():
+            rt.store.ingest()
+        report = run_enrich(
+            rt.dirs,
+            rt.config,
+            rt.store,
+            rt.guard,
+            paths=paths,
+            force=args.force,
+            explicit=paths is not None,
+            dry_run=args.dry_run,
+        )
+        enriched, skipped, failures = report.enriched, report.skipped, report.failures
+    verb = "would enrich" if args.dry_run else "enriched"
+    for p in enriched:
+        print(f"{verb} {p}")
+    for p, why in sorted(skipped.items()):
+        if paths is not None or why not in ("clean", "too little activity"):
+            print(f"skipped {p}: {why}")
+    for f in failures:
+        print(f"failed {f}", file=sys.stderr)
+    return 1 if failures and not enriched else 0
+
+
+def cmd_suggest(args: argparse.Namespace) -> int:
+    from dirvana import client
+
+    return client.suggest(client.stdin_payload(), n=args.n)
+
+
+def cmd_brief(args: argparse.Namespace) -> int:
+    from dirvana import client
+
+    return client.brief(client.stdin_payload())
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    import asyncio
+    import shutil
+
+    from dirvana import daemon
+    from dirvana.config import ConfigError
+    from dirvana.runtime import Runtime
+
+    problems = 0
+
+    def line(ok: bool | None, what: str, detail: str) -> None:
+        nonlocal problems
+        mark = {True: "ok  ", False: "FAIL", None: "warn"}[ok]
+        problems += ok is False
+        print(f"{mark}  {what:<22} {detail}")
+
+    try:
+        rt = Runtime.open()
+    except (ConfigError, PolicyError) as e:
+        line(False, "config/policy", str(e))
+        return 1
+    dirs = rt.dirs
+    line(True, "root", str(dirs.root))
+    if dirs.root.exists():
+        mode = dirs.root.stat().st_mode & 0o777
+        line(mode == 0o700, "root permissions", oct(mode))
+    zsh = shutil.which("zsh")
+    line(zsh is not None, "zsh", zsh or "not found")
+    line(
+        None if shutil.which("fzf") is None else True,
+        "fzf",
+        shutil.which("fzf") or "not found (built-in picker)",
+    )
+    sock = rt.socket_path
+    line(len(sock.encode()) < 100, "socket path length", f"{len(sock.encode())} bytes")
+    st = daemon.request(sock, {"v": 1, "op": "status"}, timeout=2)
+    line(
+        True if st else None,
+        "daemon",
+        f"pid {st.get('pid')}, {st.get('ticks')} ticks"
+        if st
+        else "not running (hotkeys call providers in-process)",
+    )
+    pinned = any(r.settings.get("llm") for r in rt.rules)
+    line(
+        True if pinned else None,
+        "egress pins",
+        "present" if pinned else "no llm= rules: every configured provider may see every directory",
+    )
+    for git in (dirs.config, dirs.state):
+        if (git / ".git").exists() or any((p / ".git").exists() for p in git.parents):
+            secret = (git / "age").exists() or (git / "machine-id").exists()
+            line(
+                None if not secret else False,
+                "dotfiles exposure",
+                f"{git} is inside a git worktree",
+            )
+    for name, pc in rt.config.providers.items():
+        problem = pc.problem()
+        line(
+            problem is None if pc.kind != "copilot" else None if problem else True,
+            f"provider {name}",
+            problem or f"{pc.kind} {pc.model or ''}".rstrip(),
+        )
+    if args.providers:
+        from dirvana.enrich import ProviderPool
+
+        pool = ProviderPool(rt.config, rt.dirs)
+
+        async def check_all() -> None:
+            for name in rt.config.configured():
+                try:
+                    s = await pool.get(name).check()
+                    line(s.ok, f"  {name} live", s.detail)
+                except Exception as e:
+                    line(False, f"  {name} live", f"{type(e).__name__}: {e}")
+            await pool.aclose()
+
+        asyncio.run(check_all())
+    return 1 if problems else 0
+
+
+def cmd_smoke(args: argparse.Namespace) -> int:
+    import asyncio
+
+    from dirvana.enrich import ProviderPool
+    from dirvana.providers.base import CompletionRequest
+    from dirvana.runtime import Runtime
+
+    rt = Runtime.open()
+    names = [args.provider] if args.provider else rt.config.configured()
+    if not names:
+        raise CliError("no configured providers (see `dirvana doctor`)")
+    pool = ProviderPool(rt.config, rt.dirs)
+    req = CompletionRequest(
+        system="Reply with exactly the word: pong",
+        user="ping",
+        max_output_tokens=16,
+        timeout_s=60,
+        purpose="smoke",
+    )
+    failed = 0
+
+    async def run() -> None:
+        nonlocal failed
+        for name in names:
+            pc = rt.config.providers[name]
+            why = rt.budget.exhausted(pc)
+            if why:
+                print(f"skip {name}: {why}")
+                continue
+            try:
+                res = await pool.get(name).complete(req)
+            except Exception as e:
+                failed += 1
+                rt.budget.record(
+                    pc,
+                    model=pc.model,
+                    purpose="smoke",
+                    usage=None,
+                    ok=False,
+                    node=None,
+                    reason=str(e),
+                )
+                print(f"FAIL {name}: {e}")
+                continue
+            rt.budget.record(
+                pc, model=res.model, purpose="smoke", usage=res.usage, ok=True, node=None
+            )
+            u = res.usage
+            spent = (
+                f"{u.requests} premium requests"
+                if u.unit == "premium_requests"
+                else f"{u.input}+{u.output} tokens"
+            )
+            reply = res.text.strip()[:40]
+            print(f"ok   {name}: {res.model}: {reply!r} ({spent}, {res.latency_s:.2f}s)")
+        await pool.aclose()
+
+    asyncio.run(run())
+    return 1 if failed else 0
